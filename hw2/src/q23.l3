@@ -1,0 +1,106 @@
+(define make-error
+  (lambda (msg)
+    (list 'error msg)))
+
+(define is-error?
+  (lambda (v)
+    (if (pair? v)
+        (if (eq? (car v) 'error) #t #f)
+        #f)))
+
+(define first-key
+  (lambda (pairs)
+    (car (car pairs))))
+
+(define first-value
+  (lambda (pairs)
+    (cdr (car pairs))))
+
+(define valid-key?
+  (lambda (k)
+    (symbol? k)))
+
+(define key-exists?
+  (lambda (key pairs)
+    (if (eq? pairs '())
+        #f
+        (if (pair?  pairs)
+        (if (eq? key (car pairs))
+            #t
+            (key-exists? key (cdr pairs)))
+            #f))))
+
+(define has-duplicate-keys?
+  (lambda (pairs)
+    (if (eq? pairs '())
+        #f
+        (if (key-exists? (car pairs) (cdr pairs))
+            #t
+            (has-duplicate-keys? (cdr pairs))))))
+
+(define dict
+  (lambda (pairs)
+    (if (not (forall (lambda (p) (valid-key? (car p))) pairs))
+        (make-error "All keys must be symbols")
+        (if (has-duplicate-keys? pairs)
+            (make-error "Dictionary contains duplicate keys")
+            pairs))))
+
+(define get
+  (lambda (dict key)
+    (if (is-error? dict)
+        dict
+        (if (eq? dict '())
+            (make-error "Key not found")
+            (if (and (pair? (car dict)) (eq? key (first-key dict)))
+                (first-value dict)
+                (get (cdr dict) key))))))
+
+(define forall
+  (lambda (pred lst)
+    (if (eq? lst '())
+        #t
+        (if (pred (car lst))
+            (forall pred (cdr lst))
+            #f))))
+
+(define dict?
+  (lambda (x)
+    (if (is-error? x)
+        #f
+        (if(is-good-struct? x)
+        (if (pair? x)
+            (if (forall (lambda (p)
+                          (if (pair? p)
+                              (if (valid-key? (car p)) #t #f)
+                              #f))
+                        x)
+                #t
+                #f)
+            #f)
+            #f))))
+
+
+
+(define is-good-struct?
+  (lambda (x)
+    (if (eq? x '())
+        #t
+        (if (not (pair? x))
+            #f
+            (if (not (pair? (car x)))
+                #f
+                (if (not (symbol? (car (car x))))
+                    #f
+                    (if (pair? (cdr (car x)))
+                        (if (eq? '() (cdr (cdr (car x))))
+                            #f
+                            (is-good-struct? (cdr x)))
+                        (is-good-struct? (cdr x)))))))))
+
+
+(define bind
+  (lambda (v f)
+    (if (is-error? v)
+        v
+        (f v))))
